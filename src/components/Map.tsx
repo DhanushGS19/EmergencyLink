@@ -1,19 +1,20 @@
-"use client";
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import type { Location, Ambulance, Hospital } from '../types';
+import L from 'leaflet';
 
-import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-
-// Fix leaflet marker icon issue in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+interface MapProps {
+  center: Location;
+  patientLocation?: Location;
+  ambulances?: Ambulance[];
+  hospitals?: Hospital[];
+  onAmbulanceClick?: (a: Ambulance) => void;
+  onHospitalClick?: (h: Hospital) => void;
+  className?: string;
+}
 
 // Custom icons
-export const patientIcon = new L.Icon({
+const patientIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -22,7 +23,7 @@ export const patientIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-export const ambulanceIcon = new L.Icon({
+const ambulanceIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -31,7 +32,7 @@ export const ambulanceIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-export const hospitalIcon = new L.Icon({
+const hospitalIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -40,58 +41,77 @@ export const hospitalIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-// Helper component to center map
-function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
+const MapUpdater = ({ center }: { center: Location }) => {
   const map = useMap();
-  map.setView(center, zoom);
+  useEffect(() => {
+    map.setView([center.latitude, center.longitude], map.getZoom());
+  }, [center, map]);
   return null;
-}
-
-export type MapProps = {
-  center: [number, number];
-  zoom?: number;
-  markers?: {
-    id: string;
-    position: [number, number];
-    type: "patient" | "ambulance" | "hospital";
-    title?: string;
-    details?: string;
-  }[];
-  onClick?: (lat: number, lng: number) => void;
 };
 
-export default function Map({ center, zoom = 13, markers = [], onClick }: MapProps) {
+const MapComponent: React.FC<MapProps> = ({ 
+  center, 
+  patientLocation, 
+  ambulances = [], 
+  hospitals = [],
+  onAmbulanceClick,
+  onHospitalClick,
+  className = "map-container"
+}) => {
   return (
-    <MapContainer
-      center={center}
-      zoom={zoom}
-      style={{ height: "100%", width: "100%" }}
-      onClick={(e) => onClick?.(e.latlng.lat, e.latlng.lng)}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <ChangeView center={center} zoom={zoom} />
-      
-      {markers.map((marker) => {
-        let icon = patientIcon;
-        if (marker.type === "ambulance") icon = ambulanceIcon;
-        if (marker.type === "hospital") icon = hospitalIcon;
-
-        return (
-          <Marker key={marker.id} position={marker.position} icon={icon}>
-            {(marker.title || marker.details) && (
-              <Popup>
-                <div className="text-black">
-                  {marker.title && <h3 className="font-bold">{marker.title}</h3>}
-                  {marker.details && <p className="text-sm">{marker.details}</p>}
-                </div>
-              </Popup>
-            )}
+    <div className={className}>
+      <MapContainer 
+        center={[center.latitude, center.longitude]} 
+        zoom={13} 
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapUpdater center={center} />
+        
+        {patientLocation && (
+          <Marker position={[patientLocation.latitude, patientLocation.longitude]} icon={patientIcon}>
+            <Popup>
+              <strong>Your Location</strong>
+            </Popup>
           </Marker>
-        );
-      })}
-    </MapContainer>
+        )}
+
+        {ambulances.map(amb => (
+          <Marker 
+            key={amb.id} 
+            position={[amb.location.latitude, amb.location.longitude]} 
+            icon={ambulanceIcon}
+            eventHandlers={{ click: () => onAmbulanceClick?.(amb) }}
+          >
+            <Popup>
+              <strong>{amb.ambulance_number}</strong><br />
+              Status: {amb.status}<br />
+              Driver: {amb.driver_name}<br />
+              Phone: {amb.phone}
+            </Popup>
+          </Marker>
+        ))}
+
+        {hospitals.map(hosp => (
+          <Marker 
+            key={hosp.id} 
+            position={[hosp.location.latitude, hosp.location.longitude]} 
+            icon={hospitalIcon}
+            eventHandlers={{ click: () => onHospitalClick?.(hosp) }}
+          >
+            <Popup>
+              <strong>{hosp.name}</strong><br />
+              Status: {hosp.status}<br />
+              Phone: {hosp.phone}
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
   );
-}
+};
+
+export default MapComponent;

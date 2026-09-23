@@ -1,37 +1,97 @@
-import React, { Suspense } from 'react';
-import { useGameStore } from './store/useGameStore';
-import { MainMenu } from './components/ui/MainMenu';
-// Import levels lazily or directly. For now directly to avoid loading states issues in prototype
-import { Level1Guardian } from './components/levels/Level1Guardian';
-import { Level2Rebirth } from './components/levels/Level2Rebirth';
-import { Level3Curse } from './components/levels/Level3Curse';
-import { Level4Scribe } from './components/levels/Level4Scribe';
-import { Level5Mountain } from './components/levels/Level5Mountain';
-import { Level6Race } from './components/levels/Level6Race';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AlertCircle, LogOut, Home } from 'lucide-react';
 
-function App() {
-  const { currentLevel, setLevel } = useGameStore();
+import LandingPage from './pages/LandingPage';
+import Login from './pages/Login';
+import PatientDashboard from './pages/PatientDashboard';
+import DriverDashboard from './pages/DriverDashboard';
+import DispatcherDashboard from './pages/DispatcherDashboard';
+import HospitalDashboard from './pages/HospitalDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+
+const Navbar = () => {
+  const { user, logout } = useAuth();
 
   return (
-    <div className="w-full h-screen relative bg-black text-white">
-      {currentLevel === 0 && <MainMenu />}
-      
-      {currentLevel !== 0 && (
-        <button 
-          onClick={() => setLevel(0)}
-          className="absolute top-4 left-4 z-50 px-4 py-2 bg-slate-800/80 hover:bg-slate-700 text-white rounded border border-slate-600 transition-colors"
-        >
-          &larr; Back to Menu
-        </button>
-      )}
+    <nav className="navbar">
+      <Link to="/" className="brand">
+        <AlertCircle className="brand-icon" size={28} />
+        EmergencyLink
+      </Link>
+      <div className="nav-links items-center">
+        {user ? (
+          <>
+            <span className="text-muted hide-on-mobile">Logged in as {user.name} ({user.role})</span>
+            <button onClick={logout} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>
+              <LogOut size={16} /> Logout
+            </button>
+          </>
+        ) : (
+          <Link to="/" className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>
+            <Home size={16} /> Home
+          </Link>
+        )}
+      </div>
+    </nav>
+  );
+};
 
-      {currentLevel === 1 && <Level1Guardian />}
-      {currentLevel === 2 && <Level2Rebirth />}
-      {currentLevel === 3 && <Level3Curse />}
-      {currentLevel === 4 && <Level4Scribe />}
-      {currentLevel === 5 && <Level5Mountain />}
-      {currentLevel === 6 && <Level6Race />}
-    </div>
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
+  const { user } = useAuth();
+  
+  if (!user) return <Navigate to="/" replace />;
+  if (!allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
+  
+  return <>{children}</>;
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <div className="app-container">
+          <Navbar />
+          <main className="main-content">
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
+              
+              <Route path="/patient" element={
+                <ProtectedRoute allowedRoles={['PATIENT']}>
+                  <PatientDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/driver" element={
+                <ProtectedRoute allowedRoles={['DRIVER']}>
+                  <DriverDashboard />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/dispatcher" element={
+                <ProtectedRoute allowedRoles={['DISPATCHER']}>
+                  <DispatcherDashboard />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/hospital" element={
+                <ProtectedRoute allowedRoles={['HOSPITAL']}>
+                  <HospitalDashboard />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </main>
+        </div>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
