@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --background: #020617; /* Very dark slate */
+  --foreground: #f8fafc;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  /* Clinical Colors */
+  --color-medical-blue: #2563eb;
+  --color-medical-blue-hover: #1d4ed8;
+  --color-medical-teal: #0d9488;
+  --color-medical-teal-glow: rgba(13, 148, 136, 0.5);
+  --color-emergency-red: #e11d48;
+  --color-emergency-hover: #be123c;
+  --color-emergency-glow: rgba(225, 29, 72, 0.6);
+  
+  /* Glass Panels */
+  --color-glass: rgba(15, 23, 42, 0.75);
+  --color-glass-light: rgba(30, 41, 59, 0.85);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  overflow: hidden; /* Prevent body scrolling, let internal panels scroll */
+}
+
+/* Animations */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 var(--color-emergency-glow);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 20px rgba(225, 29, 72, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s infinite;
+}
+
+/* Fix for leaflet map z-index and interaction */
+.leaflet-container {
+  z-index: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  position: absolute !important;
+  top: 0;
+  left: 0;
+}
+
+/* Glassmorphism utility classes for Tailwind 4 */
+.glass-panel {
+  background-color: var(--color-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-light {
+  background-color: var(--color-glass-light);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-glass-border);
+}
+
+/* Hide scrollbars for cleaner look */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.4);
+}
