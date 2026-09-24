@@ -85,7 +85,7 @@ const DriverDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4" style={{ md: { gridTemplateColumns: '1fr 2fr' } }}>
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-4">
         <div className="card">
           {!activeRequest ? (
             <div className="text-center py-4 text-muted">

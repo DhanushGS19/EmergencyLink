@@ -36,7 +36,7 @@ const AdminDashboard = () => {
         <strong>DEMO DATA:</strong> Ambulance and hospital availability shown here is simulated for prototype purposes.
       </div>
 
-      <div className="grid grid-cols-1 gap-4" style={{ md: { gridTemplateColumns: '1fr 1fr' } }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="card">
           <div className="flex justify-between items-center mb-3">
             <h3>Hospitals</h3>
